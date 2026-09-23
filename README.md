@@ -47,6 +47,198 @@ Opstellingen worden lokaal bewaard in
 `~/.local/share/Orkest.Stoelenplan/opstellingen/` (op Windows in
 `%LOCALAPPDATA%\Orkest.Stoelenplan\opstellingen\`), één JSON-bestand per opstelling.
 
+## Uitleveren per platform
+
+De app wordt uitgeleverd als **één zelfstandig uitvoerbaar bestand** (self-contained,
+single-file): op de doelmachine is geen .NET nodig. Je kunt voor elk platform vanaf
+elk platform bouwen, dus bijvoorbeeld op Linux ook de Windows- en macOS-versie maken.
+
+Het commando is steeds hetzelfde, alleen de *runtime identifier* (`-r`) verschilt:
+
+```bash
+dotnet publish src/Orkest.Stoelenplan.Desktop -c Release -r <rid> \
+  --self-contained true \
+  -p:PublishSingleFile=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true \
+  -p:EnableCompressionInSingleFile=true \
+  -p:DebugType=none \
+  -o publish/<rid>
+```
+
+| Platform                                                  | `<rid>`       | Resultaat                                 |
+|-----------------------------------------------------------|---------------|-------------------------------------------|
+| Windows x64                                               | `win-x64`     | `publish/win-x64/OrkestStoelenplan.exe`   |
+| Linux x64 (CachyOS, Arch, Debian, Ubuntu, openSUSE, Fedora) | `linux-x64` | `publish/linux-x64/OrkestStoelenplan`     |
+| macOS met Apple Silicon (M1 en nieuwer)                   | `osx-arm64`   | `publish/osx-arm64/OrkestStoelenplan`     |
+| macOS met Intel-processor                                 | `osx-x64`     | `publish/osx-x64/OrkestStoelenplan`       |
+
+Het resultaat is ongeveer 50 MB. De map `publish/` staat in `.gitignore`.
+
+Alles in één keer bouwen (bash):
+
+```bash
+for rid in win-x64 linux-x64 osx-arm64 osx-x64; do
+  dotnet publish src/Orkest.Stoelenplan.Desktop -c Release -r "$rid" \
+    --self-contained true -p:PublishSingleFile=true \
+    -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true \
+    -p:DebugType=none -o "publish/$rid"
+done
+```
+
+Bouw je op Windows in PowerShell, zet het commando dan op één regel (of vervang de
+`\` aan het einde van de regels door een backtick `` ` ``).
+
+### .NET SDK installeren (alleen nodig om te bouwen)
+
+| Systeem           | Installeren                                                                |
+|-------------------|----------------------------------------------------------------------------|
+| CachyOS / Arch    | `sudo pacman -S dotnet-sdk`                                                |
+| Fedora            | `sudo dnf install dotnet-sdk-10.0`                                         |
+| Ubuntu            | `sudo apt install dotnet-sdk-10.0`                                         |
+| Debian / openSUSE | Via het install-script hieronder (of de pakketbron van Microsoft)          |
+| macOS             | Installer van [dotnet.microsoft.com](https://dotnet.microsoft.com/download) of `brew install --cask dotnet-sdk` |
+| Windows           | Installer van [dotnet.microsoft.com](https://dotnet.microsoft.com/download) of `winget install Microsoft.DotNet.SDK.10` |
+
+Werkt dat niet (bijvoorbeeld omdat je distributie nog geen .NET 10 heeft), dan werkt
+het install-script van Microsoft op elke Linux-distributie en op macOS, zonder root:
+
+```bash
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0
+export PATH="$HOME/.dotnet:$PATH"   # ook in ~/.bashrc of ~/.zshrc zetten
+```
+
+### Windows
+
+Kopieer `OrkestStoelenplan.exe` naar de doelcomputer en start hem met een dubbelklik.
+Omdat het bestand niet digitaal ondertekend is, kan Windows SmartScreen de eerste keer
+waarschuwen: kies **Meer informatie → Toch uitvoeren**.
+
+### Linux
+
+Hetzelfde `linux-x64`-bestand werkt op alle genoemde distributies. Na kopiëren
+(bijv. via een USB-stick of download) moet het soms opnieuw uitvoerbaar gemaakt worden:
+
+```bash
+chmod +x OrkestStoelenplan
+./OrkestStoelenplan
+```
+
+De app heeft een paar gangbare systeembibliotheken nodig (ICU, fontconfig, X11). Op een
+installatie met een desktopomgeving zijn die er vrijwel altijd al; ontbreekt er toch
+iets, dan:
+
+| Distributie      | Commando                                                              |
+|------------------|-----------------------------------------------------------------------|
+| CachyOS / Arch   | `sudo pacman -S --needed icu fontconfig libx11 libice libsm`          |
+| Debian / Ubuntu  | `sudo apt install libicu-dev libfontconfig1 libx11-6 libice6 libsm6`  |
+| Fedora           | `sudo dnf install libicu fontconfig libX11 libICE libSM`              |
+| openSUSE         | `sudo zypper install libicu-devel fontconfig libX11-6 libICE6 libSM6` |
+
+Onder Wayland (standaard op o.a. Fedora, Ubuntu en openSUSE met GNOME of KDE) draait de
+app via XWayland; dat is op die systemen standaard aanwezig.
+
+Om de app in het startmenu te krijgen, zet je het bestand bijvoorbeeld in
+`~/.local/bin/` en maak je `~/.local/share/applications/orkest-stoelenplan.desktop` aan:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=Orkest stoelenplan
+Exec=/home/<gebruiker>/.local/bin/OrkestStoelenplan
+Terminal=false
+Categories=Office;
+```
+
+### macOS
+
+Kies `osx-arm64` voor Macs met een M-chip (Apple-menu → **Over deze Mac** toont
+"Chip Apple M…") en `osx-x64` voor oudere Macs met een Intel-processor.
+
+Het resultaat is een los uitvoerbaar bestand, nog geen `.app`-bundel. Omdat het niet
+door Apple ondertekend is, blokkeert Gatekeeper het na downloaden. Zo start je het:
+
+```bash
+chmod +x OrkestStoelenplan
+xattr -d com.apple.quarantine OrkestStoelenplan   # Gatekeeper-blokkade opheffen
+./OrkestStoelenplan
+```
+
+Verpak het bestand voor het overzetten liefst als `.tar.gz` of `.zip` die op de Mac
+zelf wordt uitgepakt; dan blijft het uitvoerbaar.
+
+### Snelste lokale build (CachyOS met Hyprland)
+
+Voor eigen gebruik op de machine waar je ook bouwt, kun je de opstarttijd verder
+verkorten:
+
+- **ReadyToRun** (`PublishReadyToRun=true`) compileert de code vooraf naar machinecode,
+  zodat er bij het opstarten nauwelijks JIT-werk is. Code die vaak draait wordt
+  tijdens gebruik nog steeds geoptimaliseerd voor jouw CPU (AVX2/AVX-512 waar
+  beschikbaar), vergelijkbaar met de x86-64-v3/v4-pakketten van CachyOS.
+- **Geen compressie**: het bestand wordt groter (ca. 125 MB), maar hoeft bij het
+  starten niet eerst uitgepakt te worden.
+
+```bash
+dotnet publish src/Orkest.Stoelenplan.Desktop -c Release -r linux-x64 \
+  --self-contained true \
+  -p:PublishSingleFile=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true \
+  -p:PublishReadyToRun=true \
+  -p:DebugType=none \
+  -o publish/linux-x64-lokaal
+
+install -Dm755 publish/linux-x64-lokaal/OrkestStoelenplan ~/.local/bin/OrkestStoelenplan
+```
+
+Draai je CachyOS op ARM, gebruik dan `-r linux-arm64`.
+
+**Hyprland** is een Wayland-compositor; Avalonia draait daarbinnen via **XWayland**.
+
+1. Zorg dat XWayland geïnstalleerd is (meestal al het geval):
+
+   ```bash
+   pacman -Q xorg-xwayland || sudo pacman -S xorg-xwayland
+   ```
+
+2. Hyprland zet het venster standaard in een tegel, terwijl de app minimaal 900×600
+   nodig heeft. Laat hem liever zwevend openen via `~/.config/hypr/hyprland.conf`:
+
+   ```ini
+   windowrulev2 = float, title:^(Orkest stoelenplan)$
+   windowrulev2 = size 1400 850, title:^(Orkest stoelenplan)$
+   ```
+
+   (Nieuwere Hyprland-versies gebruiken een aangepaste `windowrule`-syntax; zie de
+   [Hyprland-wiki](https://wiki.hypr.land/Configuring/Window-Rules/) als deze regels
+   een foutmelding geven.)
+
+3. Gebruik je fractionele schaling (bijv. `1.5` in je `monitor=`-regel), dan kunnen
+   XWayland-apps wazig ogen. Laat XWayland dan onschaald renderen en laat de app zelf
+   schalen:
+
+   ```ini
+   xwayland {
+       force_zero_scaling = true
+   }
+   ```
+
+   En start de app met de bijbehorende schaalfactor, bijvoorbeeld via
+   `~/.local/share/applications/orkest-stoelenplan.desktop` (verschijnt dan ook in
+   launchers als wofi, rofi of fuzzel):
+
+   ```ini
+   [Desktop Entry]
+   Type=Application
+   Name=Orkest stoelenplan
+   Exec=env AVALONIA_GLOBAL_SCALE_FACTOR=1.5 /home/<gebruiker>/.local/bin/OrkestStoelenplan
+   Terminal=false
+   Categories=Office;
+   ```
+
+   Zonder fractionele schaling is `force_zero_scaling` en de `env`-variabele niet nodig.
+
+Onder **XFCE** (X11) zijn geen extra stappen nodig.
+
 ## Met de API
 
 Start de API (luistert standaard op `http://localhost:5731`, instelbaar via `Urls` in
