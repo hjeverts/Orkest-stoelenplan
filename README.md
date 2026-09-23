@@ -1,4 +1,4 @@
-# Crescendo Stoelenplan
+# Orkest stoelenplan
 
 Desktop-app om een stoelenplan voor het orkest te maken: musici invoeren, ze naar een
 stoel slepen en de opstelling opslaan per concert.
@@ -19,12 +19,12 @@ stoel slepen en de opstelling opslaan per concert.
 ## Opbouw
 
 ```
-Crescendo.Stoelenplan.slnx
+Orkest.Stoelenplan.slnx
 └─ src/
-   ├─ Crescendo.Stoelenplan.Shared   → modellen (Musicus, Stoel, Opstelling), standaardopstelling,
+   ├─ Orkest.Stoelenplan.Shared   → modellen (Musicus, Stoel, Opstelling), standaardopstelling,
    │                                   opslag-interface en JSON-bestandsopslag
-   ├─ Crescendo.Stoelenplan.Desktop  → Avalonia-app (MVVM met CommunityToolkit.Mvvm)
-   └─ Crescendo.Stoelenplan.Api      → optionele ASP.NET Core API om opstellingen centraal te bewaren
+   ├─ Orkest.Stoelenplan.Desktop  → Avalonia-app (MVVM met CommunityToolkit.Mvvm)
+   └─ Orkest.Stoelenplan.Api      → optionele ASP.NET Core API om opstellingen centraal te bewaren
 ```
 
 De desktop-app praat alleen met `IOpstellingOpslag`. Standaard is dat
@@ -40,12 +40,12 @@ Beide gebruiken dezelfde modellen en hetzelfde JSON-formaat uit het Shared-proje
 
 ```bash
 dotnet build
-dotnet run --project src/Crescendo.Stoelenplan.Desktop
+dotnet run --project src/Orkest.Stoelenplan.Desktop
 ```
 
 Opstellingen worden lokaal bewaard in
-`~/.local/share/Crescendo.Stoelenplan/opstellingen/` (op Windows in
-`%LOCALAPPDATA%\Crescendo.Stoelenplan\opstellingen\`), één JSON-bestand per opstelling.
+`~/.local/share/Orkest.Stoelenplan/opstellingen/` (op Windows in
+`%LOCALAPPDATA%\Orkest.Stoelenplan\opstellingen\`), één JSON-bestand per opstelling.
 
 ## Met de API
 
@@ -53,16 +53,16 @@ Start de API (luistert standaard op `http://localhost:5731`, instelbaar via `Url
 `appsettings.json`):
 
 ```bash
-dotnet run --project src/Crescendo.Stoelenplan.Api
+dotnet run --project src/Orkest.Stoelenplan.Api
 ```
 
-En start de desktop-app met de omgevingsvariabele `CRESCENDO_API_URL`:
+En start de desktop-app met de omgevingsvariabele `ORKEST_STOELENPLAN_API_URL`:
 
 ```bash
-CRESCENDO_API_URL=http://localhost:5731 dotnet run --project src/Crescendo.Stoelenplan.Desktop
+ORKEST_STOELENPLAN_API_URL=http://localhost:5731 dotnet run --project src/Orkest.Stoelenplan.Desktop
 ```
 
-De API bewaart opstellingen in `src/Crescendo.Stoelenplan.Api/data/opstellingen/`
+De API bewaart opstellingen in `src/Orkest.Stoelenplan.Api/data/opstellingen/`
 (instelbaar via `Opslag:Map`). Endpoints:
 
 | Methode | Pad                    | Wat                                 |

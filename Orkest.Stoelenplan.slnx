@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Orkest.Stoelenplan.Shared/Orkest.Stoelenplan.Shared.csproj" />
+    <Project Path="src/Orkest.Stoelenplan.Desktop/Orkest.Stoelenplan.Desktop.csproj" />
+    <Project Path="src/Orkest.Stoelenplan.Api/Orkest.Stoelenplan.Api.csproj" />
+  </Folder>
+</Solution>
