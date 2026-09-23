@@ -9,7 +9,7 @@ stoel slepen en de opstelling opslaan per concert.
   | Orkest          | Opstelling                                                                 |
   |-----------------|----------------------------------------------------------------------------|
   | Symfonieorkest  | Strijkers in halve cirkels rond de dirigent, hout in het midden, koper en slagwerk achterin |
-  | Harmonieorkest  | Fluiten, hobo's en klarinetten vooraan, saxofoons/hoorns/euphoniums in het midden, trompetten, trombones en tuba's achter |
+  | Harmonieorkest  | Klarinetten links in drie rijen, hobo's in het midden en fluiten rechts (piccolo en 1e fluit vooraan, 2e fluit erachter); basklarinetten en fagotten op de 2e rij in het midden; saxofoons achter de fluiten (alt vooraan), euphoniums en baritons rechts, hoorns links vóór de trompetten; achterste blazersrij: trompetten vanuit het midden naar links, trombones en tuba's vanuit het midden naar rechts; slagwerk daarachter |
   | Fanfareorkest   | Bugels vooraan links, saxofoons vooraan rechts, baritons/euphoniums, trompetten en trombones daarachter, bassen en slagwerk achterin |
   | Brassband       | Britse "hoefijzer"-opstelling: solocornetten links vooraan, bugel en althoorns in het midden, euphoniums rechts vooraan; daarachter repiano/2e/3e cornetten, baritons en trombones |
   | Bigband         | Drie rijen (saxofoons, trombones, trompetten) met de leadstemmen in één lijn, ritmesectie links |
