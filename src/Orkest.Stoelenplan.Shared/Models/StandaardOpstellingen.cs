@@ -51,29 +51,33 @@ public static class StandaardOpstellingen
     }
 
     /// <summary>
-    /// Klarinetten links in drie rijen, hobo's in het midden en fluiten rechts vooraan;
-    /// daarachter basklarinetten en fagotten in het midden en de saxofoons achter de fluiten
-    /// (alt vooraan). Euphoniums en baritons rechts, hoorns links vóór de trompetten.
-    /// Op de achterste blazersrij beginnen trompetten (naar links) en trombones (naar rechts)
-    /// in het midden, met de tuba's rechts ernaast; het slagwerk staat daarachter.
+    /// Klarinetten links in drie rijen, hobo's in het midden en fluiten rechts in twee rijen;
+    /// basklarinetten en fagotten op de 3e rij in het midden en de saxofoons rechts daarnaast,
+    /// achter de fluiten. Euphoniums en baritons rechts daarachter, hoorns links vóór de
+    /// trompetten. Op de achterste blazersrij beginnen trompetten (naar links) en trombones
+    /// (naar rechts) in het midden, met de tuba's en de baritonsax rechts ernaast; het
+    /// slagwerk staat daarachter.
     /// </summary>
     private static List<Stoel> Harmonieorkest()
     {
         var s = new List<Stoel>();
         // Rij 1: 1e klarinetten – hobo's – 1e fluiten en piccolo
         Boog(s, 190, 180, 0, G(Klarinet, 3, "1"), G(EsKlarinet, 1), G(Hobo, 2), G(Fluit, 2, "1"), G(Piccolo, 1));
-        // Rij 2: 2e klarinetten – basklarinetten en fagotten – 2e fluiten
-        Boog(s, 265, 180, 0, G(Klarinet, 4, "2"), G(Basklarinet, 2), G(Fagot, 2), G(Fluit, 2, "2"));
-        // Rij 3: 3e klarinetten links; altsaxen achter de fluiten, euphoniums rechts
+        // Rij 2: 2e klarinetten links, 2e fluiten rechts
+        Boog(s, 265, 180, 110, G(Klarinet, 4, "2"));
+        Boog(s, 265, 70, 0, G(Fluit, 4, "2"));
+        // Rij 3: 3e klarinetten – basklarinetten en fagotten – saxofoons (alt vooraan)
         Boog(s, 340, 180, 105, G(Klarinet, 5, "3"), G(Altklarinet, 1));
-        Boog(s, 340, 60, 0, G(Altsaxofoon, 1, "1"), G(Altsaxofoon, 1, "2"), G(Euphonium, 2));
-        // Rij 4: hoorns links vóór de trompetten; tenor-/baritonsax achter de altsaxen, baritons rechts
+        Boog(s, 340, 105, 60, G(Basklarinet, 2), G(Fagot, 2));
+        Boog(s, 340, 60, 0, G(Altsaxofoon, 1, "1"), G(Altsaxofoon, 1, "2"), G(Tenorsaxofoon, 2));
+        // Rij 4: hoorns links vóór de trompetten; euphoniums en baritons rechts
         Boog(s, 415, 150, 112, G(Hoorn, 4));
-        Boog(s, 415, 58, 2, G(Tenorsaxofoon, 2), G(Baritonsaxofoon, 1), G(Bariton, 2));
-        // Rij 5: trompetten vanuit het midden naar links, trombones en tuba's vanuit het midden naar rechts
+        Boog(s, 415, 58, 2, G(Euphonium, 2), G(Bariton, 2));
+        // Rij 5: trompetten vanuit het midden naar links; trombones, tuba's en baritonsax
+        // vanuit het midden naar rechts
         Boog(s, 490, 91, 145, G(Trompet, 2, "1"), G(Trompet, 2, "2"), G(Trompet, 2, "3"));
-        Boog(s, 490, 89, 26, G(Trombone, 1, "1"), G(Trombone, 1, "2"), G(Trombone, 1, "3"), G(Bastrombone, 1),
-            G(Tuba, 3));
+        Boog(s, 490, 89, 18, G(Trombone, 1, "1"), G(Trombone, 1, "2"), G(Trombone, 1, "3"), G(Bastrombone, 1),
+            G(Tuba, 3), G(Baritonsaxofoon, 1));
         // Achteraan: slagwerk
         Boog(s, 565, 110, 70, G(Pauken, 1), G(Slagwerk, 3), G(Mallets, 1));
         return s;
