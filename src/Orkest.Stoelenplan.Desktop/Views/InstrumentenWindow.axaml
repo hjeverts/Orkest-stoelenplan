@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Orkest.Stoelenplan.Desktop.ViewModels"
+        x:Class="Orkest.Stoelenplan.Desktop.Views.InstrumentenWindow"
+        x:DataType="vm:InstrumentenBeheerViewModel"
+        Title="Instrumenten beheren"
+        Width="640" Height="680" MinWidth="520" MinHeight="400"
+        WindowStartupLocation="CenterOwner">
+
+    <DockPanel Margin="16">
+        <!-- Nieuw instrument -->
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+            <TextBlock Text="Nieuw instrument" FontWeight="SemiBold" FontSize="16" />
+            <Grid ColumnDefinitions="*,8,120" RowDefinitions="Auto,8,Auto">
+                <TextBox Grid.Column="0" Text="{Binding Naam}" Watermark="Naam, bv. Ukelele" />
+                <TextBox Grid.Column="2" Text="{Binding Afkorting}" Watermark="Afkorting" MaxLength="6" />
+                <ComboBox Grid.Row="2" Grid.Column="0" ItemsSource="{Binding Groepen}" SelectedItem="{Binding Groep}"
+                          HorizontalAlignment="Stretch" ToolTip.Tip="Groep (bepaalt de plek in de keuzelijsten)" />
+                <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding KleurOpties}" SelectedItem="{Binding Kleur}"
+                          HorizontalAlignment="Stretch" ToolTip.Tip="Kleur van de stoel">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:KleurOptie">
+                            <Border Background="{Binding Brush}" Width="60" Height="18" CornerRadius="3"
+                                    BorderBrush="#55000000" BorderThickness="1" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </Grid>
+            <Button Content="Instrument toevoegen" Command="{Binding ToevoegenCommand}" IsDefault="True"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+        </StackPanel>
+
+        <Border DockPanel.Dock="Bottom" Padding="0,10,0,0">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Sluiten" Click="Sluiten_Click" IsCancel="True" />
+                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" VerticalAlignment="Center"
+                           Margin="0,0,12,0" />
+            </DockPanel>
+        </Border>
+
+        <!-- Alle instrumenten -->
+        <DockPanel Margin="0,16,0,0">
+            <TextBlock DockPanel.Dock="Top" Text="Alle instrumenten" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,6" />
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Regels}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:InstrumentRegel">
+                            <Grid ColumnDefinitions="28,*,70,110,90" Margin="0,2">
+                                <Border Background="{Binding Kleur}" Width="18" Height="18" CornerRadius="9"
+                                        BorderBrush="#55000000" BorderThickness="1" HorizontalAlignment="Left" />
+                                <TextBlock Grid.Column="1" Text="{Binding Naam}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="2" Text="{Binding Afkorting}" VerticalAlignment="Center" Opacity="0.7" />
+                                <TextBlock Grid.Column="3" Text="{Binding Groep}" VerticalAlignment="Center" Opacity="0.7" />
+                                <Button Grid.Column="4" Content="Verwijderen" Command="{Binding VerwijderenCommand}"
+                                        IsVisible="{Binding IsEigen}" Padding="8,2" FontSize="12" />
+                                <TextBlock Grid.Column="4" Text="standaard" IsVisible="{Binding !IsEigen}"
+                                           VerticalAlignment="Center" FontSize="12" Opacity="0.5" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </DockPanel>
+</Window>

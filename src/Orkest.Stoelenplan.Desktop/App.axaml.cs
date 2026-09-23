@@ -47,7 +47,7 @@ public partial class App : Application
 
         var map = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Orkest.Stoelenplan", "opstellingen");
+            "Orkest.Stoelenplan");
         return new JsonBestandOpslag(map);
     }
 }

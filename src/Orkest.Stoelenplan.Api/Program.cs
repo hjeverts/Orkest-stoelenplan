@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(o => OpstellingJson.Configureer(o.SerializerOptions));
 
 var opslagMap = Path.Combine(builder.Environment.ContentRootPath,
-    builder.Configuration["Opslag:Map"] ?? "data/opstellingen");
+    builder.Configuration["Opslag:Map"] ?? "data");
 builder.Services.AddSingleton<IOpstellingOpslag>(new JsonBestandOpslag(opslagMap));
 
 var app = builder.Build();
@@ -43,6 +43,20 @@ opstellingen.MapPut("/{naam}", async (string naam, Opstelling opstelling, IOpste
     {
         return Results.BadRequest(ex.Message);
     }
+});
+
+// Eigen instrumenten (de standaardinstrumenten zitten in de app zelf).
+app.MapGet("/instrumenten", (IOpstellingOpslag opslag, CancellationToken ct) => opslag.EigenInstrumentenAsync(ct));
+
+app.MapPut("/instrumenten", async (List<Instrument> instrumenten, IOpstellingOpslag opslag, CancellationToken ct) =>
+{
+    if (instrumenten.Any(i => string.IsNullOrWhiteSpace(i.Id) || string.IsNullOrWhiteSpace(i.Naam)))
+    {
+        return Results.BadRequest("Elk instrument heeft een id en een naam nodig.");
+    }
+
+    await opslag.OpslaanEigenInstrumentenAsync(instrumenten, ct);
+    return Results.NoContent();
 });
 
 app.Run();

@@ -3,13 +3,19 @@ using Orkest.Stoelenplan.Shared.Models;
 
 namespace Orkest.Stoelenplan.Shared.Opslag;
 
-/// <summary>Bewaart elke opstelling als <c>&lt;naam&gt;.json</c> in één map.</summary>
-public sealed class JsonBestandOpslag(string map) : IOpstellingOpslag
+/// <summary>
+/// Bewaart elke opstelling als <c>opstellingen/&lt;naam&gt;.json</c> en de eigen instrumenten
+/// in <c>instrumenten.json</c>, allebei onder <paramref name="basisMap"/>.
+/// </summary>
+public sealed class JsonBestandOpslag(string basisMap) : IOpstellingOpslag
 {
+    private readonly string _opstellingenMap = Path.Combine(basisMap, "opstellingen");
+    private readonly string _instrumentenPad = Path.Combine(basisMap, "instrumenten.json");
+
     public Task<IReadOnlyList<string>> NamenAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<string> namen = Directory.Exists(map)
-            ? Directory.EnumerateFiles(map, "*.json")
+        IReadOnlyList<string> namen = Directory.Exists(_opstellingenMap)
+            ? Directory.EnumerateFiles(_opstellingenMap, "*.json")
                 .Select(Path.GetFileNameWithoutExtension)
                 .OfType<string>()
                 .Order(StringComparer.CurrentCultureIgnoreCase)
@@ -18,28 +24,38 @@ public sealed class JsonBestandOpslag(string map) : IOpstellingOpslag
         return Task.FromResult(namen);
     }
 
-    public async Task<Opstelling?> LaadAsync(string naam, CancellationToken cancellationToken = default)
+    public Task<Opstelling?> LaadAsync(string naam, CancellationToken cancellationToken = default)
+        => LeesAsync<Opstelling>(PadVoor(naam), cancellationToken);
+
+    public Task OpslaanAsync(Opstelling opstelling, CancellationToken cancellationToken = default)
+        => SchrijfAsync(PadVoor(opstelling.Naam), opstelling, cancellationToken);
+
+    public async Task<IReadOnlyList<Instrument>> EigenInstrumentenAsync(CancellationToken cancellationToken = default)
+        => await LeesAsync<List<Instrument>>(_instrumentenPad, cancellationToken) ?? [];
+
+    public Task OpslaanEigenInstrumentenAsync(IReadOnlyList<Instrument> instrumenten, CancellationToken cancellationToken = default)
+        => SchrijfAsync(_instrumentenPad, instrumenten, cancellationToken);
+
+    private static async Task<T?> LeesAsync<T>(string pad, CancellationToken cancellationToken)
     {
-        var pad = PadVoor(naam);
         if (!File.Exists(pad))
         {
-            return null;
+            return default;
         }
 
         await using var stream = File.OpenRead(pad);
-        return await JsonSerializer.DeserializeAsync<Opstelling>(stream, OpstellingJson.Opties, cancellationToken);
+        return await JsonSerializer.DeserializeAsync<T>(stream, OpstellingJson.Opties, cancellationToken);
     }
 
-    public async Task OpslaanAsync(Opstelling opstelling, CancellationToken cancellationToken = default)
+    private static async Task SchrijfAsync<T>(string pad, T waarde, CancellationToken cancellationToken)
     {
-        var pad = PadVoor(opstelling.Naam);
-        Directory.CreateDirectory(map);
+        Directory.CreateDirectory(Path.GetDirectoryName(pad)!);
 
         // Eerst naar een tijdelijk bestand, zodat een crash halverwege geen half bestand achterlaat.
         var tijdelijk = pad + ".tmp";
         await using (var stream = File.Create(tijdelijk))
         {
-            await JsonSerializer.SerializeAsync(stream, opstelling, OpstellingJson.Opties, cancellationToken);
+            await JsonSerializer.SerializeAsync(stream, waarde, OpstellingJson.Opties, cancellationToken);
         }
         File.Move(tijdelijk, pad, overwrite: true);
     }
@@ -60,6 +76,6 @@ public sealed class JsonBestandOpslag(string map) : IOpstellingOpslag
             throw new ArgumentException($"Ongeldige naam voor een opstelling: \"{naam}\".");
         }
 
-        return Path.Combine(map, naam + ".json");
+        return Path.Combine(_opstellingenMap, naam + ".json");
     }
 }

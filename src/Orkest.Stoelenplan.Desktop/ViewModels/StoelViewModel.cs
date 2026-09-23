@@ -12,10 +12,11 @@ public partial class StoelViewModel : ObservableObject
 
     private readonly Action<StoelViewModel> _verwijder;
 
-    public StoelViewModel(Stoel model, MusicusViewModel? musicus, Action<StoelViewModel> verwijder)
+    public StoelViewModel(Stoel model, Instrument instrument, MusicusViewModel? musicus, Action<StoelViewModel> verwijder)
     {
         Id = model.Id;
-        Sectie = model.Sectie;
+        Instrument = instrument;
+        Partij = model.Partij.Trim();
         _x = model.X;
         _y = model.Y;
         _musicus = musicus;
@@ -23,7 +24,8 @@ public partial class StoelViewModel : ObservableObject
     }
 
     public Guid Id { get; }
-    public Sectie Sectie { get; }
+    public Instrument Instrument { get; }
+    public string Partij { get; }
 
     /// <summary>Middelpunt van de stoel in podiumcoördinaten.</summary>
     [ObservableProperty]
@@ -43,18 +45,23 @@ public partial class StoelViewModel : ObservableObject
     public double Left => X - Diameter / 2;
     public double Top => Y - Diameter / 2;
 
-    public string Afkorting => Sectie.Afkorting();
+    /// <summary>Wat er klein bovenin de stoel staat, bv. "Kl 2" of "Cor Solo".</summary>
+    public string Label => Partij.Length == 0 ? Instrument.Afkorting : $"{Instrument.Afkorting} {Partij}";
+
     public string Naam => Musicus?.Naam ?? "";
-    public IBrush Kleur => SectieKleuren.Voor(Sectie);
+    public IBrush Kleur => Kleuren.Brush(Instrument.Kleur);
+
+    private string Omschrijving => Partij.Length == 0 ? Instrument.Naam : $"{Instrument.Naam} ({Partij})";
 
     public string ToolTip => Musicus is null
-        ? $"{Sectie.Weergavenaam()} (leeg)"
-        : $"{Musicus.Naam} – {Sectie.Weergavenaam()}";
+        ? $"{Omschrijving} – leeg"
+        : $"{Musicus.Naam} – {Omschrijving}";
 
     public Stoel NaarModel() => new()
     {
         Id = Id,
-        Sectie = Sectie,
+        InstrumentId = Instrument.Id,
+        Partij = Partij,
         X = X,
         Y = Y,
         MusicusId = Musicus?.Id,

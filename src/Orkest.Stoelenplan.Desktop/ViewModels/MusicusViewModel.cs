@@ -6,13 +6,14 @@ using Orkest.Stoelenplan.Shared.Models;
 
 namespace Orkest.Stoelenplan.Desktop.ViewModels;
 
-public partial class MusicusViewModel(Musicus model, Action<MusicusViewModel> verwijder) : ObservableObject
+public partial class MusicusViewModel(Musicus model, Instrument instrument, Action<MusicusViewModel> verwijder)
+    : ObservableObject
 {
     public Guid Id => model.Id;
     public string Naam => model.Naam;
-    public Sectie Sectie => model.Sectie;
-    public string SectieNaam => Sectie.Weergavenaam();
-    public IBrush Kleur => SectieKleuren.Voor(Sectie);
+    public Instrument Instrument => instrument;
+    public string InstrumentNaam => instrument.Naam;
+    public IBrush Kleur => Kleuren.Brush(instrument.Kleur);
 
     /// <summary>Of deze musicus al op een stoel zit; wordt bijgehouden door het hoofdscherm.</summary>
     [ObservableProperty]

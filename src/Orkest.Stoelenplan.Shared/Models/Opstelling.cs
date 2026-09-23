@@ -15,4 +15,10 @@ public sealed class Opstelling
     public string Naam { get; set; } = "";
     public List<Musicus> Musici { get; set; } = [];
     public List<Stoel> Stoelen { get; set; } = [];
+
+    /// <summary>
+    /// Eigen (niet-standaard) instrumenten die in deze opstelling gebruikt worden. Zo blijft
+    /// een opstelling bruikbaar op een andere computer die die instrumenten nog niet kent.
+    /// </summary>
+    public List<Instrument> EigenInstrumenten { get; set; } = [];
 }

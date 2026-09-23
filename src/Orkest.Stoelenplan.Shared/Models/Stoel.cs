@@ -7,7 +7,11 @@ namespace Orkest.Stoelenplan.Shared.Models;
 public sealed class Stoel
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Sectie Sectie { get; set; }
+    public string InstrumentId { get; set; } = "";
+
+    /// <summary>Optionele partij/stem, bv. "1", "2", "Solo" of "Rep"; leeg als het niet uitmaakt.</summary>
+    public string Partij { get; set; } = "";
+
     public double X { get; set; }
     public double Y { get; set; }
 

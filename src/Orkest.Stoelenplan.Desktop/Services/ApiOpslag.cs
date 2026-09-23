@@ -29,5 +29,14 @@ public sealed class ApiOpslag(HttpClient http) : IOpstellingOpslag
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<IReadOnlyList<Instrument>> EigenInstrumentenAsync(CancellationToken cancellationToken = default)
+        => await http.GetFromJsonAsync<List<Instrument>>("instrumenten", OpstellingJson.Opties, cancellationToken) ?? [];
+
+    public async Task OpslaanEigenInstrumentenAsync(IReadOnlyList<Instrument> instrumenten, CancellationToken cancellationToken = default)
+    {
+        using var response = await http.PutAsJsonAsync("instrumenten", instrumenten, OpstellingJson.Opties, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     private static string Pad(string naam) => "opstellingen/" + Uri.EscapeDataString(naam.Trim());
 }

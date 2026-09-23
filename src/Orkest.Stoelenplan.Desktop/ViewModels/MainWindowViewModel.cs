@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Orkest.Stoelenplan.Desktop.Services;
 using Orkest.Stoelenplan.Shared.Models;
 using Orkest.Stoelenplan.Shared.Opslag;
 
@@ -18,13 +19,20 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(IOpstellingOpslag opslag)
     {
         _opslag = opslag;
-        ZetStoelen(StandaardOpstelling.MaakStoelen());
+        _nieuweMusicusInstrument = Catalogus.Alle[0];
+        _nieuweStoelInstrument = Catalogus.Alle[0];
+        ZetStoelen(StandaardOpstellingen.Maak(GekozenOrkestType));
     }
 
+    public InstrumentenCatalogus Catalogus { get; } = new();
+    public ObservableCollection<Instrument> Instrumenten => Catalogus.Alle;
     public ObservableCollection<StoelViewModel> Stoelen { get; } = [];
     public ObservableCollection<MusicusViewModel> Musici { get; } = [];
     public ObservableCollection<string> OpgeslagenOpstellingen { get; } = [];
-    public IReadOnlyList<SectieOptie> Secties => SectieOptie.Alle;
+    public IReadOnlyList<OrkestType> OrkestTypes { get; } = Enum.GetValues<OrkestType>();
+
+    [ObservableProperty]
+    private OrkestType _gekozenOrkestType = OrkestType.Symfonieorkest;
 
     [ObservableProperty]
     private string _opstellingNaam = "Nieuwe opstelling";
@@ -38,10 +46,15 @@ public partial class MainWindowViewModel : ObservableObject
     private string _nieuweMusicusNaam = "";
 
     [ObservableProperty]
-    private SectieOptie _nieuweMusicusSectie = SectieOptie.Alle[0];
+    [NotifyCanExecuteChangedFor(nameof(MusicusToevoegenCommand))]
+    private Instrument? _nieuweMusicusInstrument;
 
     [ObservableProperty]
-    private SectieOptie _nieuweStoelSectie = SectieOptie.Alle[0];
+    [NotifyCanExecuteChangedFor(nameof(StoelToevoegenCommand))]
+    private Instrument? _nieuweStoelInstrument;
+
+    [ObservableProperty]
+    private string _nieuweStoelPartij = "";
 
     [ObservableProperty]
     private string _statusMessage = "Voeg musici toe en sleep ze naar een stoel. Stoelen zelf kun je ook verslepen.";
@@ -53,14 +66,24 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
+            foreach (var instrument in await _opslag.EigenInstrumentenAsync())
+            {
+                Catalogus.VoegToe(instrument);
+            }
             await VerversOpgeslagenAsync();
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Kon opgeslagen opstellingen niet ophalen: {ex.Message}";
+            StatusMessage = $"Kon opgeslagen gegevens niet ophalen: {ex.Message}";
         }
         WerkPlaatsingBij();
     }
+
+    public InstrumentenBeheerViewModel MaakInstrumentenBeheer()
+        => new(Catalogus, _opslag, IsInGebruik);
+
+    private bool IsInGebruik(Instrument instrument)
+        => Stoelen.Any(s => s.Instrument == instrument) || Musici.Any(m => m.Instrument == instrument);
 
     /// <summary>
     /// Zet een musicus op een stoel. Zat de musicus al ergens, dan komt die stoel vrij;
@@ -74,25 +97,27 @@ public partial class MainWindowViewModel : ObservableObject
         }
         stoel.Musicus = musicus;
 
-        if (musicus.Sectie != stoel.Sectie)
+        if (musicus.Instrument != stoel.Instrument)
         {
-            StatusMessage = $"Let op: {musicus.Naam} ({musicus.SectieNaam}) zit nu op een {stoel.Sectie.Weergavenaam()}-stoel.";
+            StatusMessage = $"Let op: {musicus.Naam} ({musicus.InstrumentNaam}) zit nu op een stoel voor {stoel.Instrument.Naam}.";
         }
     }
 
     public MusicusViewModel? ZoekMusicus(Guid id) => Musici.FirstOrDefault(m => m.Id == id);
 
-    private bool KanMusicusToevoegen() => !string.IsNullOrWhiteSpace(NieuweMusicusNaam);
+    private bool KanMusicusToevoegen() => !string.IsNullOrWhiteSpace(NieuweMusicusNaam) && NieuweMusicusInstrument is not null;
 
     [RelayCommand(CanExecute = nameof(KanMusicusToevoegen))]
     private void MusicusToevoegen()
     {
-        VoegMusicusToe(new Musicus { Naam = NieuweMusicusNaam.Trim(), Sectie = NieuweMusicusSectie.Sectie });
+        VoegMusicusToe(new Musicus { Naam = NieuweMusicusNaam.Trim(), InstrumentId = NieuweMusicusInstrument!.Id });
         NieuweMusicusNaam = "";
         WerkPlaatsingBij();
     }
 
-    [RelayCommand]
+    private bool KanStoelToevoegen() => NieuweStoelInstrument is not null;
+
+    [RelayCommand(CanExecute = nameof(KanStoelToevoegen))]
     private void StoelToevoegen()
     {
         // Nieuwe stoelen komen linksboven op het podium; schuif ze een beetje op zodat
@@ -100,35 +125,39 @@ public partial class MainWindowViewModel : ObservableObject
         var verschuiving = Stoelen.Count % 8 * 12;
         VoegStoelToe(new Stoel
         {
-            Sectie = NieuweStoelSectie.Sectie,
+            InstrumentId = NieuweStoelInstrument!.Id,
+            Partij = NieuweStoelPartij.Trim(),
             X = 60 + verschuiving,
             Y = 60 + verschuiving,
         });
+        WerkPlaatsingBij();
     }
 
     [RelayCommand]
     private void Standaardopstelling()
     {
-        ZetStoelen(StandaardOpstelling.MaakStoelen());
-        StatusMessage = "Standaardopstelling neergezet; alle stoelen zijn weer leeg.";
+        ZetStoelen(StandaardOpstellingen.Maak(GekozenOrkestType));
+        StatusMessage = $"Standaardopstelling voor een {GekozenOrkestType.ToString().ToLowerInvariant()} neergezet; alle stoelen zijn weer leeg.";
     }
 
     /// <summary>
-    /// Zet iedereen die nog niet zit op een lege stoel van de eigen sectie, van voor
-    /// (dichtbij de dirigent) naar achter, in de volgorde van de musicilijst.
+    /// Zet iedereen die nog niet zit op een lege stoel van het eigen instrument, in de
+    /// volgorde van de musicilijst: eerst de hoogste partij (Solo, 1, Rep, 2, …) en binnen
+    /// een partij van voor (dichtbij de dirigent) naar achter.
     /// </summary>
     [RelayCommand]
     private void AutomatischIndelen()
     {
         var vrijeStoelen = Stoelen
             .Where(s => s.Musicus is null)
-            .OrderBy(s => Math.Pow(s.X - Opstelling.DirigentX, 2) + Math.Pow(s.Y - Opstelling.DirigentY, 2))
+            .OrderBy(s => PartijRang(s.Partij))
+            .ThenBy(s => Math.Pow(s.X - Opstelling.DirigentX, 2) + Math.Pow(s.Y - Opstelling.DirigentY, 2))
             .ToList();
 
         var geenPlek = new List<string>();
         foreach (var musicus in Musici.Where(m => !m.IsGeplaatst).ToList())
         {
-            var stoel = vrijeStoelen.FirstOrDefault(s => s.Sectie == musicus.Sectie);
+            var stoel = vrijeStoelen.FirstOrDefault(s => s.Instrument == musicus.Instrument);
             if (stoel is null)
             {
                 geenPlek.Add(musicus.Naam);
@@ -140,17 +169,31 @@ public partial class MainWindowViewModel : ObservableObject
 
         StatusMessage = geenPlek.Count == 0
             ? "Iedereen is ingedeeld."
-            : $"Geen vrije stoel in de eigen sectie voor: {string.Join(", ", geenPlek)}.";
+            : $"Geen vrije stoel voor het eigen instrument van: {string.Join(", ", geenPlek)}.";
     }
+
+    /// <summary>
+    /// Volgorde waarin partijen gevuld worden. "Rep" (repiano, brassband) valt tussen de
+    /// 1e en 2e cornetten; onbekende partijen komen achteraan.
+    /// </summary>
+    private static double PartijRang(string partij) => partij.ToLowerInvariant() switch
+    {
+        "" or "solo" => 0,
+        "rep" or "repiano" => 1.5,
+        _ when int.TryParse(partij, out var nummer) => nummer,
+        _ => 100,
+    };
 
     [RelayCommand]
     private async Task OpslaanAsync()
     {
+        var gebruikt = Stoelen.Select(s => s.Instrument).Concat(Musici.Select(m => m.Instrument)).ToHashSet();
         var opstelling = new Opstelling
         {
             Naam = OpstellingNaam.Trim(),
             Musici = Musici.Select(m => m.Model).ToList(),
             Stoelen = Stoelen.Select(s => s.NaarModel()).ToList(),
+            EigenInstrumenten = Catalogus.Eigen.Where(gebruikt.Contains).ToList(),
         };
 
         try
@@ -184,6 +227,17 @@ public partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            // Eigen instrumenten uit de opstelling die hier nog niet bekend zijn, overnemen.
+            var nieuw = opstelling.EigenInstrumenten.Where(i => !Catalogus.Bestaat(i.Id)).ToList();
+            foreach (var instrument in nieuw)
+            {
+                Catalogus.VoegToe(instrument);
+            }
+            if (nieuw.Count > 0)
+            {
+                await _opslag.OpslaanEigenInstrumentenAsync(Catalogus.Eigen);
+            }
+
             Musici.Clear();
             foreach (var musicus in opstelling.Musici)
             {
@@ -211,6 +265,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ZetStoelen(IEnumerable<Stoel> stoelen)
     {
+        foreach (var stoel in Stoelen)
+        {
+            stoel.PropertyChanged -= OnStoelPropertyChanged;
+        }
         Stoelen.Clear();
         foreach (var stoel in stoelen)
         {
@@ -222,7 +280,7 @@ public partial class MainWindowViewModel : ObservableObject
     private void VoegStoelToe(Stoel model)
     {
         var musicus = model.MusicusId is { } id ? ZoekMusicus(id) : null;
-        var stoel = new StoelViewModel(model, musicus, VerwijderStoel);
+        var stoel = new StoelViewModel(model, Catalogus.Zoek(model.InstrumentId), musicus, VerwijderStoel);
         stoel.PropertyChanged += OnStoelPropertyChanged;
         Stoelen.Add(stoel);
     }
@@ -234,10 +292,10 @@ public partial class MainWindowViewModel : ObservableObject
         WerkPlaatsingBij();
     }
 
-    /// <summary>Voegt een musicus toe op de juiste plek: gesorteerd op sectie en daarna naam.</summary>
+    /// <summary>Voegt een musicus toe op de juiste plek: gesorteerd op instrument en daarna naam.</summary>
     private void VoegMusicusToe(Musicus model)
     {
-        var musicus = new MusicusViewModel(model, VerwijderMusicus);
+        var musicus = new MusicusViewModel(model, Catalogus.Zoek(model.InstrumentId), VerwijderMusicus);
         var index = 0;
         while (index < Musici.Count && Vergelijk(Musici[index], musicus) <= 0)
         {
@@ -246,10 +304,10 @@ public partial class MainWindowViewModel : ObservableObject
         Musici.Insert(index, musicus);
     }
 
-    private static int Vergelijk(MusicusViewModel a, MusicusViewModel b)
+    private int Vergelijk(MusicusViewModel a, MusicusViewModel b)
     {
-        var sectie = a.Sectie.CompareTo(b.Sectie);
-        return sectie != 0 ? sectie : NaamComparer.Compare(a.Naam, b.Naam);
+        var instrument = Catalogus.Volgorde(a.Instrument).CompareTo(Catalogus.Volgorde(b.Instrument));
+        return instrument != 0 ? instrument : NaamComparer.Compare(a.Naam, b.Naam);
     }
 
     private void VerwijderMusicus(MusicusViewModel musicus)

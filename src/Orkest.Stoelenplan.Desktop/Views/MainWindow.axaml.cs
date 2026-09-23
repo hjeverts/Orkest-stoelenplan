@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Orkest.Stoelenplan.Desktop.ViewModels;
 using Orkest.Stoelenplan.Shared.Models;
 
@@ -22,6 +23,17 @@ public partial class MainWindow : Window
     }
 
     private MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;
+
+    private async void InstrumentenBeheren_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var venster = new InstrumentenWindow { DataContext = viewModel.MaakInstrumentenBeheer() };
+        await venster.ShowDialog(this);
+    }
 
     // --- Stoelen verslepen -------------------------------------------------
 

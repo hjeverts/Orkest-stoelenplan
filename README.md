@@ -3,16 +3,31 @@
 Desktop-app om een stoelenplan voor het orkest te maken: musici invoeren, ze naar een
 stoel slepen en de opstelling opslaan per concert.
 
-- Start met een klassieke symfonie-opstelling: strijkers in halve cirkels rond de
-  dirigent, houtblazers in het midden, koper en slagwerk achteraan. Elke sectie heeft
-  een eigen kleur.
-- **Musici** voeg je toe met naam en sectie. Sleep een naam uit de lijst naar een stoel
-  om iemand te plaatsen. Wie al zit, wordt in de lijst lichter weergegeven.
-- **Stoelen** kun je met de muis verslepen, toevoegen (per sectie) en via de
-  rechtermuisknop leegmaken of verwijderen.
-- **Automatisch indelen** zet iedereen die nog niet zit op een vrije stoel van de eigen
-  sectie, van voor (dichtbij de dirigent) naar achter.
-- Opstellingen worden op naam opgeslagen, bijvoorbeeld "Najaarsconcert 2026".
+- **Standaardopstellingen** voor vijf soorten orkest, als startpunt om verder aan te
+  passen:
+
+  | Orkest          | Opstelling                                                                 |
+  |-----------------|----------------------------------------------------------------------------|
+  | Symfonieorkest  | Strijkers in halve cirkels rond de dirigent, hout in het midden, koper en slagwerk achterin |
+  | Harmonieorkest  | Fluiten, hobo's en klarinetten vooraan, saxofoons/hoorns/euphoniums in het midden, trompetten, trombones en tuba's achter |
+  | Fanfareorkest   | Bugels vooraan links, saxofoons vooraan rechts, baritons/euphoniums, trompetten en trombones daarachter, bassen en slagwerk achterin |
+  | Brassband       | Britse "hoefijzer"-opstelling: solocornetten links vooraan, bugel en althoorns in het midden, euphoniums rechts vooraan; daarachter repiano/2e/3e cornetten, baritons en trombones |
+  | Bigband         | Drie rijen (saxofoons, trombones, trompetten) met de leadstemmen in één lijn, ritmesectie links |
+
+- **Instrumenten**: ruim 40 standaardinstrumenten uit al deze orkestsoorten (strijkers,
+  houtblazers, saxofoons, koper, slagwerk, ritmesectie, harp en zang), elk met een eigen
+  kleur. Via **Instrumenten beheren…** voeg je eigen instrumenten toe (naam, afkorting,
+  groep en kleur) of verwijder je ze weer.
+- **Musici** voeg je toe met naam en instrument. Sleep een naam uit de lijst naar een
+  stoel om iemand te plaatsen. Wie al zit, wordt in de lijst lichter weergegeven.
+- **Stoelen** kun je met de muis verslepen, toevoegen (per instrument, met optioneel een
+  partij zoals "1", "2" of "Solo") en via de rechtermuisknop leegmaken of verwijderen.
+- **Automatisch indelen** zet iedereen die nog niet zit op een vrije stoel van het eigen
+  instrument: eerst de hoogste partij (Solo, 1, Rep, 2, …), en daarbinnen van voor
+  (dichtbij de dirigent) naar achter.
+- Opstellingen worden op naam opgeslagen, bijvoorbeeld "Najaarsconcert 2026". Eigen
+  instrumenten die in een opstelling gebruikt worden, worden erin meegeslagen, zodat
+  de opstelling ook op een andere computer te openen is.
 - Gebouwd met [Avalonia UI](https://avaloniaui.net/) (.NET), draait op Linux en Windows
   (en macOS).
 
@@ -21,8 +36,9 @@ stoel slepen en de opstelling opslaan per concert.
 ```
 Orkest.Stoelenplan.slnx
 └─ src/
-   ├─ Orkest.Stoelenplan.Shared   → modellen (Musicus, Stoel, Opstelling), standaardopstelling,
-   │                                   opslag-interface en JSON-bestandsopslag
+   ├─ Orkest.Stoelenplan.Shared   → modellen (Instrument, Musicus, Stoel, Opstelling),
+   │                                standaardinstrumenten en -opstellingen,
+   │                                opslag-interface en JSON-bestandsopslag
    ├─ Orkest.Stoelenplan.Desktop  → Avalonia-app (MVVM met CommunityToolkit.Mvvm)
    └─ Orkest.Stoelenplan.Api      → optionele ASP.NET Core API om opstellingen centraal te bewaren
 ```
@@ -43,9 +59,11 @@ dotnet build
 dotnet run --project src/Orkest.Stoelenplan.Desktop
 ```
 
-Opstellingen worden lokaal bewaard in
-`~/.local/share/Orkest.Stoelenplan/opstellingen/` (op Windows in
-`%LOCALAPPDATA%\Orkest.Stoelenplan\opstellingen\`), één JSON-bestand per opstelling.
+Gegevens worden lokaal bewaard in `~/.local/share/Orkest.Stoelenplan/` (op Windows in
+`%LOCALAPPDATA%\Orkest.Stoelenplan\`):
+
+- `opstellingen/` – één JSON-bestand per opstelling;
+- `instrumenten.json` – de eigen instrumenten (de standaardinstrumenten zitten in de app zelf).
 
 ## Uitleveren per platform
 
@@ -254,14 +272,16 @@ En start de desktop-app met de omgevingsvariabele `ORKEST_STOELENPLAN_API_URL`:
 ORKEST_STOELENPLAN_API_URL=http://localhost:5731 dotnet run --project src/Orkest.Stoelenplan.Desktop
 ```
 
-De API bewaart opstellingen in `src/Orkest.Stoelenplan.Api/data/opstellingen/`
-(instelbaar via `Opslag:Map`). Endpoints:
+De API bewaart opstellingen en eigen instrumenten in `src/Orkest.Stoelenplan.Api/data/`
+(instelbaar via `Opslag:Map`), in dezelfde indeling als lokaal. Endpoints:
 
 | Methode | Pad                    | Wat                                 |
 |---------|------------------------|-------------------------------------|
 | GET     | `/opstellingen`        | Namen van alle opgeslagen opstellingen |
 | GET     | `/opstellingen/{naam}` | Eén opstelling (404 als die niet bestaat) |
 | PUT     | `/opstellingen/{naam}` | Opstelling opslaan of overschrijven |
+| GET     | `/instrumenten`        | Eigen instrumenten                  |
+| PUT     | `/instrumenten`        | Eigen instrumenten vervangen        |
 
 > **Let op:** de API heeft nog geen authenticatie. Draai hem alleen lokaal of op een
 > vertrouwd netwerk zolang dat niet is toegevoegd.
