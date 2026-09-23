@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Crescendo.Stoelenplan.Shared/Crescendo.Stoelenplan.Shared.csproj" />
+    <Project Path="src/Crescendo.Stoelenplan.Desktop/Crescendo.Stoelenplan.Desktop.csproj" />
+    <Project Path="src/Crescendo.Stoelenplan.Api/Crescendo.Stoelenplan.Api.csproj" />
+  </Folder>
+</Solution>

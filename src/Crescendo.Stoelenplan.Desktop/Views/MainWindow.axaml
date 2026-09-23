@@ -1,0 +1,147 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Crescendo.Stoelenplan.Desktop.ViewModels"
+        x:Class="Crescendo.Stoelenplan.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Crescendo – Stoelenplan"
+        Width="1400" Height="850" MinWidth="900" MinHeight="600">
+
+    <Window.Styles>
+        <Style Selector="Border.musicus.geplaatst">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+        <!-- Werkbalk: opslaan/openen en opstelling-acties -->
+        <Border DockPanel.Dock="Top" Padding="12,8"
+                BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <WrapPanel Orientation="Horizontal">
+                <TextBlock Text="Naam:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBox Text="{Binding OpstellingNaam}" Width="220" />
+                <Button Content="Opslaan" Command="{Binding OpslaanCommand}" Margin="6,0,20,0" />
+
+                <ComboBox ItemsSource="{Binding OpgeslagenOpstellingen}"
+                          SelectedItem="{Binding GeselecteerdeOpstelling}"
+                          PlaceholderText="Opgeslagen opstelling…" Width="220" />
+                <Button Content="Openen" Command="{Binding OpenenCommand}" Margin="6,0,20,0" />
+
+                <Button Content="Standaardopstelling" Command="{Binding StandaardopstellingCommand}" Margin="0,0,6,0" />
+                <Button Content="Automatisch indelen" Command="{Binding AutomatischIndelenCommand}" />
+            </WrapPanel>
+        </Border>
+
+        <!-- Statusbalk -->
+        <Border DockPanel.Dock="Bottom" Padding="12,6"
+                BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding PlaatsingSamenvatting}" Opacity="0.7" />
+                <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+
+        <!-- Zijpaneel: musici en stoelen toevoegen -->
+        <Border DockPanel.Dock="Left" Width="280" Padding="12"
+                BorderThickness="0,0,1,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Spacing="6">
+                    <TextBlock Text="Musici" FontWeight="SemiBold" FontSize="16" />
+                    <TextBox Text="{Binding NieuweMusicusNaam}" Watermark="Naam" />
+                    <ComboBox ItemsSource="{Binding Secties}" SelectedItem="{Binding NieuweMusicusSectie}"
+                              HorizontalAlignment="Stretch" />
+                    <Button Content="Musicus toevoegen" Command="{Binding MusicusToevoegenCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsDefault="True" />
+                    <TextBlock Text="Sleep een naam naar een stoel. Rechtsklik om te verwijderen."
+                               TextWrapping="Wrap" FontSize="12" Opacity="0.7" />
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,12,0,0">
+                    <TextBlock Text="Stoelen" FontWeight="SemiBold" FontSize="16" />
+                    <ComboBox ItemsSource="{Binding Secties}" SelectedItem="{Binding NieuweStoelSectie}"
+                              HorizontalAlignment="Stretch" />
+                    <Button Content="Stoel toevoegen" Command="{Binding StoelToevoegenCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                    <TextBlock Text="Sleep stoelen om ze te verplaatsen. Rechtsklik op een stoel om hem leeg te maken of te verwijderen."
+                               TextWrapping="Wrap" FontSize="12" Opacity="0.7" />
+                </StackPanel>
+
+                <ScrollViewer Margin="0,8,0,0">
+                    <ItemsControl ItemsSource="{Binding Musici}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MusicusViewModel">
+                                <Border Classes="musicus" Classes.geplaatst="{Binding IsGeplaatst}"
+                                        Background="{Binding Kleur}" CornerRadius="4" Padding="8,5" Margin="0,1"
+                                        Cursor="Hand" PointerPressed="Musicus_PointerPressed">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Verwijderen" Command="{Binding VerwijderenCommand}" />
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding SectieNaam}"
+                                                   FontSize="11" Foreground="#333" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Naam}" Foreground="Black"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Het podium; schaalt mee met de venstergrootte -->
+        <Viewbox Stretch="Uniform" Margin="12">
+            <Grid x:Name="Podium" Width="1200" Height="700" Background="#F4EFE6"
+                  DragDrop.AllowDrop="True">
+                <Canvas>
+                    <Ellipse Canvas.Left="570" Canvas.Top="610" Width="60" Height="60"
+                             Fill="#3A3A3A" />
+                    <TextBlock Canvas.Left="570" Canvas.Top="628" Width="60" TextAlignment="Center"
+                               Text="Dirigent" Foreground="White" FontSize="11" />
+                    <TextBlock Canvas.Left="0" Canvas.Top="676" Width="1200" TextAlignment="Center"
+                               Text="▼ publiek ▼" Foreground="#8A8070" FontSize="12" />
+                </Canvas>
+
+                <ItemsControl ItemsSource="{Binding Stoelen}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.Styles>
+                        <Style Selector="ContentPresenter" x:DataType="vm:StoelViewModel">
+                            <Setter Property="Canvas.Left" Value="{Binding Left}" />
+                            <Setter Property="Canvas.Top" Value="{Binding Top}" />
+                        </Style>
+                    </ItemsControl.Styles>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:StoelViewModel">
+                            <Border Width="60" Height="60" CornerRadius="30"
+                                    Background="{Binding Kleur}" BorderBrush="#55000000" BorderThickness="1"
+                                    Cursor="SizeAll" ToolTip.Tip="{Binding ToolTip}"
+                                    PointerPressed="Stoel_PointerPressed"
+                                    PointerMoved="Stoel_PointerMoved"
+                                    PointerReleased="Stoel_PointerReleased">
+                                <Border.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Stoel leegmaken" Command="{Binding LeegmakenCommand}" />
+                                        <MenuItem Header="Stoel verwijderen" Command="{Binding VerwijderenCommand}" />
+                                    </ContextMenu>
+                                </Border.ContextMenu>
+                                <StackPanel VerticalAlignment="Center" Margin="4,0">
+                                    <TextBlock Text="{Binding Afkorting}" FontSize="10" Foreground="#555"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Naam}" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="Black" TextAlignment="Center"
+                                               TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </Viewbox>
+    </DockPanel>
+</Window>

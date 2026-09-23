@@ -1,0 +1,61 @@
+# Opgeslagen opstellingen (ook die van de API) bevatten namen van leden en horen
+# niet in git terecht te komen.
+data/
+
+# .NET build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww]in32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+bld/
+publish/
+out/
+
+# User-specific / IDE files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+.nuget/
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# Rider / ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings
+
+# MSBuild / build logs
+*.binlog
+*.log
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local secrets / environment
+*.env
+appsettings.*.local.json
