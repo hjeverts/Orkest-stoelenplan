@@ -65,6 +65,18 @@ Gegevens worden lokaal bewaard in `~/.local/share/Orkest.Stoelenplan/` (op Windo
 - `opstellingen/` – één JSON-bestand per opstelling;
 - `instrumenten.json` – de eigen instrumenten (de standaardinstrumenten zitten in de app zelf).
 
+### Opstellingen delen
+
+Met **Exporteren…** bewaar je de opstelling die op het scherm staat als `.json`-bestand,
+bijvoorbeeld om te mailen. De ontvanger kiest **Importeren…**; de opstelling komt dan in
+de lijst met opgeslagen opstellingen en wordt meteen geopend. Eigen instrumenten die in
+de opstelling gebruikt worden, reizen mee. Bestaat er al een opstelling met dezelfde naam,
+dan vraagt de app of die overschreven moet worden of dat de import een nieuwe naam krijgt
+(bv. "Concert (2)").
+
+Onder Linux heeft het bestandsvenster `xdg-desktop-portal` (met een backend voor je
+desktop, bv. `xdg-desktop-portal-hyprland` of `-gtk`) of GTK 3 nodig.
+
 ## Uitleveren per platform
 
 De app wordt uitgeleverd als **één zelfstandig uitvoerbaar bestand** (self-contained,

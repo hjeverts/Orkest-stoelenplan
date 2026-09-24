@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Orkest.Stoelenplan.Desktop.ViewModels;
 using Orkest.Stoelenplan.Shared.Models;
 
@@ -33,6 +34,82 @@ public partial class MainWindow : Window
 
         var venster = new InstrumentenWindow { DataContext = viewModel.MaakInstrumentenBeheer() };
         await venster.ShowDialog(this);
+    }
+
+    // --- Exporteren en importeren -------------------------------------------
+
+    private static readonly FilePickerFileType StoelenplanBestand = new("Stoelenplan (JSON)")
+    {
+        Patterns = ["*.json"],
+        MimeTypes = ["application/json"],
+    };
+
+    private async void Exporteren_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var bestand = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Opstelling exporteren",
+            SuggestedFileName = viewModel.OpstellingNaam.Trim() + ".json",
+            DefaultExtension = "json",
+            FileTypeChoices = [StoelenplanBestand],
+            ShowOverwritePrompt = true,
+        });
+        if (bestand is null)
+        {
+            return;
+        }
+
+        await using var stream = await bestand.OpenWriteAsync();
+        await viewModel.ExporteerAsync(stream, bestand.Name);
+    }
+
+    private async void Importeren_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var bestanden = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Opstelling importeren",
+            FileTypeFilter = [StoelenplanBestand, FilePickerFileTypes.All],
+        });
+        if (bestanden is not [var bestand])
+        {
+            return;
+        }
+
+        Opstelling? opstelling;
+        await using (var stream = await bestand.OpenReadAsync())
+        {
+            opstelling = await viewModel.LeesImportAsync(stream, bestand.Name);
+        }
+        if (opstelling is null)
+        {
+            return;
+        }
+
+        if (viewModel.BestaatAl(opstelling.Naam))
+        {
+            var nieuweNaam = viewModel.VrijeNaam(opstelling.Naam);
+            var keuze = await new NaamBestaatWindow(opstelling.Naam, nieuweNaam).ShowDialog<NaamBestaatKeuze>(this);
+            switch (keuze)
+            {
+                case NaamBestaatKeuze.NieuweNaam:
+                    opstelling.Naam = nieuweNaam;
+                    break;
+                case NaamBestaatKeuze.Annuleren:
+                    return;
+            }
+        }
+
+        await viewModel.ImporteerAsync(opstelling);
     }
 
     // --- Stoelen verslepen -------------------------------------------------

@@ -26,6 +26,11 @@
                           PlaceholderText="Opgeslagen opstelling…" Width="220" />
                 <Button Content="Openen" Command="{Binding OpenenCommand}" Margin="6,0,20,0" />
 
+                <Button Content="Exporteren…" Click="Exporteren_Click" Margin="0,0,6,0"
+                        ToolTip.Tip="Bewaar deze opstelling als bestand om te delen" />
+                <Button Content="Importeren…" Click="Importeren_Click" Margin="0,0,20,0"
+                        ToolTip.Tip="Voeg een gedeelde opstelling uit een bestand toe" />
+
                 <ComboBox ItemsSource="{Binding OrkestTypes}" SelectedItem="{Binding GekozenOrkestType}"
                           Width="170" ToolTip.Tip="Soort orkest voor de standaardopstelling" />
                 <Button Content="Standaardopstelling" Command="{Binding StandaardopstellingCommand}" Margin="6,0,20,0" />

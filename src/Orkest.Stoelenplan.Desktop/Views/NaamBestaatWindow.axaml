@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Orkest.Stoelenplan.Desktop.Views.NaamBestaatWindow"
+        Title="Opstelling bestaat al"
+        Width="460" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="16" Spacing="16">
+        <TextBlock x:Name="Vraag" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6">
+            <Button Content="Annuleren" Click="Annuleren_Click" IsCancel="True" />
+            <Button Content="Overschrijven" Click="Overschrijven_Click" />
+            <Button x:Name="NieuweNaamKnop" Click="NieuweNaam_Click" IsDefault="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

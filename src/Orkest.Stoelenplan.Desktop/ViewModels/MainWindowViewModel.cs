@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Orkest.Stoelenplan.Desktop.Services;
@@ -184,17 +185,23 @@ public partial class MainWindowViewModel : ObservableObject
         _ => 100,
     };
 
-    [RelayCommand]
-    private async Task OpslaanAsync()
+    /// <summary>De opstelling zoals die nu op het scherm staat, inclusief de gebruikte eigen instrumenten.</summary>
+    private Opstelling HuidigeOpstelling()
     {
         var gebruikt = Stoelen.Select(s => s.Instrument).Concat(Musici.Select(m => m.Instrument)).ToHashSet();
-        var opstelling = new Opstelling
+        return new Opstelling
         {
             Naam = OpstellingNaam.Trim(),
             Musici = Musici.Select(m => m.Model).ToList(),
             Stoelen = Stoelen.Select(s => s.NaarModel()).ToList(),
             EigenInstrumenten = Catalogus.Eigen.Where(gebruikt.Contains).ToList(),
         };
+    }
+
+    [RelayCommand]
+    private async Task OpslaanAsync()
+    {
+        var opstelling = HuidigeOpstelling();
 
         try
         {
@@ -227,29 +234,110 @@ public partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            // Eigen instrumenten uit de opstelling die hier nog niet bekend zijn, overnemen.
-            var nieuw = opstelling.EigenInstrumenten.Where(i => !Catalogus.Bestaat(i.Id)).ToList();
-            foreach (var instrument in nieuw)
-            {
-                Catalogus.VoegToe(instrument);
-            }
-            if (nieuw.Count > 0)
-            {
-                await _opslag.OpslaanEigenInstrumentenAsync(Catalogus.Eigen);
-            }
-
-            Musici.Clear();
-            foreach (var musicus in opstelling.Musici)
-            {
-                VoegMusicusToe(musicus);
-            }
-            ZetStoelen(opstelling.Stoelen);
-            OpstellingNaam = opstelling.Naam;
+            await ToonAsync(opstelling);
             StatusMessage = $"Opstelling \"{opstelling.Naam}\" geopend.";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Openen mislukt: {ex.Message}";
+        }
+    }
+
+    /// <summary>Zet een opstelling op het scherm en neemt onbekende eigen instrumenten eruit over.</summary>
+    private async Task ToonAsync(Opstelling opstelling)
+    {
+        var nieuw = opstelling.EigenInstrumenten.Where(i => !Catalogus.Bestaat(i.Id)).ToList();
+        foreach (var instrument in nieuw)
+        {
+            Catalogus.VoegToe(instrument);
+        }
+        if (nieuw.Count > 0)
+        {
+            await _opslag.OpslaanEigenInstrumentenAsync(Catalogus.Eigen);
+        }
+
+        Musici.Clear();
+        foreach (var musicus in opstelling.Musici)
+        {
+            VoegMusicusToe(musicus);
+        }
+        ZetStoelen(opstelling.Stoelen);
+        OpstellingNaam = opstelling.Naam;
+    }
+
+    /// <summary>Schrijft de opstelling op het scherm als JSON naar <paramref name="doel"/>, bv. een gekozen bestand.</summary>
+    public async Task ExporteerAsync(Stream doel, string bestandsnaam)
+    {
+        try
+        {
+            await JsonSerializer.SerializeAsync(doel, HuidigeOpstelling(), OpstellingJson.Opties);
+            StatusMessage = $"Opstelling geëxporteerd naar \"{bestandsnaam}\".";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Exporteren mislukt: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Leest een geëxporteerde opstelling in. Zonder naam in het bestand wordt de bestandsnaam
+    /// gebruikt. Geeft <c>null</c> (met een melding in de statusbalk) als het bestand onbruikbaar is.
+    /// </summary>
+    public async Task<Opstelling?> LeesImportAsync(Stream bron, string bestandsnaam)
+    {
+        try
+        {
+            var opstelling = await JsonSerializer.DeserializeAsync<Opstelling>(bron, OpstellingJson.Opties);
+            if (opstelling is null || (opstelling.Stoelen.Count == 0 && opstelling.Musici.Count == 0))
+            {
+                StatusMessage = $"\"{bestandsnaam}\" bevat geen opstelling.";
+                return null;
+            }
+
+            opstelling.Naam = string.IsNullOrWhiteSpace(opstelling.Naam)
+                ? Path.GetFileNameWithoutExtension(bestandsnaam)
+                : opstelling.Naam.Trim();
+            return opstelling;
+        }
+        catch (JsonException)
+        {
+            StatusMessage = $"\"{bestandsnaam}\" is geen geldig stoelenplan-bestand.";
+            return null;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Importeren mislukt: {ex.Message}";
+            return null;
+        }
+    }
+
+    public bool BestaatAl(string naam) => OpgeslagenOpstellingen.Contains(naam.Trim(), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Eerste vrije variant van <paramref name="naam"/>: "Naam (2)", "Naam (3)", …</summary>
+    public string VrijeNaam(string naam)
+    {
+        var nummer = 2;
+        while (BestaatAl($"{naam} ({nummer})"))
+        {
+            nummer++;
+        }
+        return $"{naam} ({nummer})";
+    }
+
+    /// <summary>Slaat een ingelezen opstelling op in de eigen lijst en zet hem op het scherm.</summary>
+    public async Task ImporteerAsync(Opstelling opstelling)
+    {
+        try
+        {
+            await _opslag.OpslaanAsync(opstelling);
+            await ToonAsync(opstelling);
+            await VerversOpgeslagenAsync();
+            GeselecteerdeOpstelling = opstelling.Naam;
+            StatusMessage = $"Opstelling \"{opstelling.Naam}\" geïmporteerd.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Importeren mislukt: {ex.Message}";
         }
     }
 
