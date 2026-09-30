@@ -25,6 +25,10 @@ stoel slepen en de opstelling opslaan per concert.
 - **Automatisch indelen** zet iedereen die nog niet zit op een vrije stoel van het eigen
   instrument: eerst de hoogste partij (Solo, 1, Rep, 2, …), en daarbinnen van voor
   (dichtbij de dirigent) naar achter.
+- **Stoelen uitlijnen** maakt de tussenruimte netter zonder de opstelling om te gooien:
+  stoelen die samen een rij vormen (een boog rond de dirigent, of een rechte rij) komen
+  op één lijn met gelijke afstanden; de buitenste stoelen en de volgorde blijven gelijk.
+  Losse stoelen blijven staan, tenzij ze over een andere stoel heen liggen.
 - Opstellingen worden op naam opgeslagen, bijvoorbeeld "Najaarsconcert 2026". Eigen
   instrumenten die in een opstelling gebruikt worden, worden erin meegeslagen, zodat
   de opstelling ook op een andere computer te openen is.

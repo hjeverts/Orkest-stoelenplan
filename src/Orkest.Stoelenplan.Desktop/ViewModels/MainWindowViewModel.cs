@@ -178,6 +178,21 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Maakt de tussenruimte tussen de stoelen netter: rijen komen op één boog (of rechte lijn)
+    /// met gelijke afstanden; volgorde en buitenste stoelen van elke rij blijven gelijk.
+    /// </summary>
+    [RelayCommand]
+    private void StoelenUitlijnen()
+    {
+        var nieuw = Shared.Models.StoelenUitlijnen.Lijn(Stoelen.Select(s => (s.X, s.Y)).ToList());
+        for (var i = 0; i < Stoelen.Count; i++)
+        {
+            (Stoelen[i].X, Stoelen[i].Y) = nieuw[i];
+        }
+        StatusMessage = "Stoelen uitgelijnd. Niet tevreden? Open de opgeslagen versie opnieuw.";
+    }
+
+    /// <summary>
     /// Volgorde waarin partijen gevuld worden. "Rep" (repiano, brassband) valt tussen de
     /// 1e en 2e cornetten; onbekende partijen komen achteraan.
     /// </summary>

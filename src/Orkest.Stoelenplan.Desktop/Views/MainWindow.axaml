@@ -40,6 +40,8 @@
                 <Button Content="Standaardopstelling" Command="{Binding StandaardopstellingCommand}" Margin="6,0,20,0" />
 
                 <Button Content="Automatisch indelen" Command="{Binding AutomatischIndelenCommand}" Margin="0,0,6,0" />
+                <Button Content="Stoelen uitlijnen" Command="{Binding StoelenUitlijnenCommand}" Margin="0,0,6,0"
+                        ToolTip.Tip="Zet de stoelen per rij netjes op gelijke afstand, zonder de volgorde te veranderen" />
                 <Button Content="Instrumenten beheren…" Click="InstrumentenBeheren_Click" />
             </WrapPanel>
         </Border>
