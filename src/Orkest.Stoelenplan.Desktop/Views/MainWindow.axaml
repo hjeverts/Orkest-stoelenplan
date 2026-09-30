@@ -30,8 +30,10 @@
                         ToolTip.Tip="Bewaar deze opstelling als bestand om te delen" />
                 <Button Content="Importeren…" Click="Importeren_Click" Margin="0,0,6,0"
                         ToolTip.Tip="Voeg een gedeelde opstelling uit een bestand toe" />
-                <Button Content="PDF…" Click="PdfExporteren_Click" Margin="0,0,20,0"
+                <Button Content="PDF…" Click="PdfExporteren_Click" Margin="0,0,6,0"
                         ToolTip.Tip="Bewaar het stoelenplan als PDF, om te printen of te versturen" />
+                <Button Content="Ledenlijst…" Click="LedenlijstExporteren_Click" Margin="0,0,20,0"
+                        ToolTip.Tip="Bewaar de lijst van musici (op instrument, stem en naam) als PDF" />
 
                 <ComboBox ItemsSource="{Binding OrkestTypes}" SelectedItem="{Binding GekozenOrkestType}"
                           Width="170" ToolTip.Tip="Soort orkest voor de standaardopstelling" />

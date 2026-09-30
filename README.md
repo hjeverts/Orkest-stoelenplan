@@ -76,6 +76,9 @@ dan vraagt de app of die overschreven moet worden of dat de import een nieuwe na
 
 Met **PDF…** bewaar je het stoelenplan zoals het op het scherm staat als PDF (A4 liggend,
 met de naam van de opstelling als titel), om te printen of naar de musici te sturen.
+Met **Ledenlijst…** bewaar je een genummerde lijst van alle musici (instrument, stem en naam)
+als PDF (A4 staand, in een monospace lettertype), gesorteerd op instrument, stem en naam. De
+stem is de partij van de stoel waar iemand op zit; wie nog niet geplaatst is, heeft geen stem.
 
 Onder Linux heeft het bestandsvenster `xdg-desktop-portal` (met een backend voor je
 desktop, bv. `xdg-desktop-portal-hyprland` of `-gtk`) of GTK 3 nodig.

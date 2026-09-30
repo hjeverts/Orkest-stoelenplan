@@ -108,6 +108,39 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void LedenlijstExporteren_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var naam = viewModel.OpstellingNaam.Trim();
+        var bestand = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Ledenlijst als PDF bewaren",
+            SuggestedFileName = $"Ledenlijst {naam}".Trim() + ".pdf",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfBestand],
+            ShowOverwritePrompt = true,
+        });
+        if (bestand is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var stream = await bestand.OpenWriteAsync();
+            await LedenlijstPdf.SchrijfAsync(stream, viewModel.Ledenlijst(), naam);
+            viewModel.StatusMessage = $"Ledenlijst opgeslagen als PDF \"{bestand.Name}\".";
+        }
+        catch (Exception ex)
+        {
+            viewModel.StatusMessage = $"PDF maken mislukt: {ex.Message}";
+        }
+    }
+
     private async void Importeren_Click(object? sender, RoutedEventArgs e)
     {
         if (ViewModel is not { } viewModel)

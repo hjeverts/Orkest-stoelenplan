@@ -15,6 +15,10 @@ public partial class MainWindowViewModel : ObservableObject
     private static readonly StringComparer NaamComparer =
         StringComparer.Create(CultureInfo.GetCultureInfo("nl-NL"), ignoreCase: true);
 
+    /// <summary>Stemmen met cijfers op getalwaarde ("2" vóór "10"), zonder stem eerst.</summary>
+    private static readonly StringComparer StemComparer =
+        StringComparer.Create(CultureInfo.GetCultureInfo("nl-NL"), CompareOptions.IgnoreCase | CompareOptions.NumericOrdering);
+
     private readonly IOpstellingOpslag _opslag;
 
     public MainWindowViewModel(IOpstellingOpslag opslag)
@@ -390,6 +394,24 @@ public partial class MainWindowViewModel : ObservableObject
             index++;
         }
         Musici.Insert(index, musicus);
+    }
+
+    /// <summary>
+    /// Alle musici voor de ledenlijst, gesorteerd op instrument, stem en naam. De stem is de
+    /// partij van de stoel waar de musicus op zit (leeg als hij nog niet geplaatst is).
+    /// </summary>
+    public IReadOnlyList<LedenlijstRegel> Ledenlijst()
+    {
+        var stemPerMusicus = Stoelen
+            .Where(s => s.Musicus is not null)
+            .ToDictionary(s => s.Musicus!, s => s.Partij);
+
+        return Musici
+            .Select(m => new LedenlijstRegel(m.Naam, m.Instrument, stemPerMusicus.GetValueOrDefault(m, "")))
+            .OrderBy(r => Catalogus.Volgorde(r.Instrument))
+            .ThenBy(r => r.Stem, StemComparer)
+            .ThenBy(r => r.Naam, NaamComparer)
+            .ToList();
     }
 
     private int Vergelijk(MusicusViewModel a, MusicusViewModel b)
