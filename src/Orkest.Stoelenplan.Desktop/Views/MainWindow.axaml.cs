@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     // Stoel die nu met de muis versleept wordt, en waar binnen de stoel je hem vastpakte.
     private StoelViewModel? _gesleepteStoel;
     private Point _sleepOffset;
+    private Point _sleepStart;
 
     public MainWindow()
     {
@@ -201,6 +202,7 @@ public partial class MainWindow : Window
         }
 
         _gesleepteStoel = stoel;
+        _sleepStart = new Point(stoel.X, stoel.Y);
         _sleepOffset = new Point(punt.Position.X - stoel.X, punt.Position.Y - stoel.Y);
         e.Pointer.Capture(control);
         e.Handled = true;
@@ -221,13 +223,19 @@ public partial class MainWindow : Window
 
     private void Stoel_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (_gesleepteStoel is null)
+        if (_gesleepteStoel is not { } stoel)
         {
             return;
         }
 
         _gesleepteStoel = null;
         e.Pointer.Capture(null);
+
+        // Alleen echt verschuiven telt als actie voor "Ongedaan maken", niet een klik.
+        if (stoel.X != _sleepStart.X || stoel.Y != _sleepStart.Y)
+        {
+            ViewModel?.StoelVerplaatst(stoel, _sleepStart.X, _sleepStart.Y);
+        }
     }
 
     // --- Musici naar een stoel slepen ---------------------------------------

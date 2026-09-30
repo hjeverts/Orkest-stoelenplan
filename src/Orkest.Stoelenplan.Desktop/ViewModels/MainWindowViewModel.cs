@@ -19,7 +19,13 @@ public partial class MainWindowViewModel : ObservableObject
     private static readonly StringComparer StemComparer =
         StringComparer.Create(CultureInfo.GetCultureInfo("nl-NL"), CompareOptions.IgnoreCase | CompareOptions.NumericOrdering);
 
+    /// <summary>Hoeveel acties je terug kunt met "Ongedaan maken".</summary>
+    private const int MaxOngedaan = 10;
+
     private readonly IOpstellingOpslag _opslag;
+
+    /// <summary>De stand van vóór elke actie, de laatste actie achteraan.</summary>
+    private readonly LinkedList<(string Actie, Opstelling Stand)> _geschiedenis = new();
 
     public MainWindowViewModel(IOpstellingOpslag opslag)
     {
@@ -96,6 +102,12 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public void Plaats(MusicusViewModel musicus, StoelViewModel stoel)
     {
+        if (stoel.Musicus == musicus)
+        {
+            return;
+        }
+
+        Onthoud($"{musicus.Naam} plaatsen");
         foreach (var andere in Stoelen.Where(s => s.Musicus == musicus && s != stoel))
         {
             andere.Musicus = null;
@@ -115,6 +127,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(KanMusicusToevoegen))]
     private void MusicusToevoegen()
     {
+        Onthoud($"{NieuweMusicusNaam.Trim()} toevoegen");
         VoegMusicusToe(new Musicus { Naam = NieuweMusicusNaam.Trim(), InstrumentId = NieuweMusicusInstrument!.Id });
         NieuweMusicusNaam = "";
         WerkPlaatsingBij();
@@ -125,6 +138,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(KanStoelToevoegen))]
     private void StoelToevoegen()
     {
+        Onthoud("stoel toevoegen");
         // Nieuwe stoelen komen linksboven op het podium; schuif ze een beetje op zodat
         // meerdere nieuwe stoelen niet precies op elkaar liggen.
         var verschuiving = Stoelen.Count % 8 * 12;
@@ -141,6 +155,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void Standaardopstelling()
     {
+        Onthoud("standaardopstelling");
         ZetStoelen(StandaardOpstellingen.Maak(GekozenOrkestType));
         StatusMessage = $"Standaardopstelling voor een {GekozenOrkestType.ToString().ToLowerInvariant()} neergezet; alle stoelen zijn weer leeg.";
     }
@@ -153,6 +168,8 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void AutomatischIndelen()
     {
+        var stand = Momentopname();
+        var ingedeeld = 0;
         var vrijeStoelen = Stoelen
             .Where(s => s.Musicus is null)
             .OrderBy(s => PartijRang(s.Partij))
@@ -170,6 +187,12 @@ public partial class MainWindowViewModel : ObservableObject
             }
             stoel.Musicus = musicus;
             vrijeStoelen.Remove(stoel);
+            ingedeeld++;
+        }
+
+        if (ingedeeld > 0)
+        {
+            Onthoud("automatisch indelen", stand);
         }
 
         StatusMessage = geenPlek.Count == 0
@@ -184,12 +207,13 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void StoelenUitlijnen()
     {
+        Onthoud("stoelen uitlijnen");
         var nieuw = Shared.Models.StoelenUitlijnen.Lijn(Stoelen.Select(s => (s.X, s.Y)).ToList());
         for (var i = 0; i < Stoelen.Count; i++)
         {
             (Stoelen[i].X, Stoelen[i].Y) = nieuw[i];
         }
-        StatusMessage = "Stoelen uitgelijnd. Niet tevreden? Open de opgeslagen versie opnieuw.";
+        StatusMessage = "Stoelen uitgelijnd. Niet tevreden? Gebruik Ongedaan maken.";
     }
 
     /// <summary>
@@ -253,6 +277,7 @@ public partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
+            Onthoud($"\"{opstelling.Naam}\" openen");
             await ToonAsync(opstelling);
             StatusMessage = $"Opstelling \"{opstelling.Naam}\" geopend.";
         }
@@ -349,6 +374,7 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             await _opslag.OpslaanAsync(opstelling);
+            Onthoud($"\"{opstelling.Naam}\" importeren");
             await ToonAsync(opstelling);
             await VerversOpgeslagenAsync();
             GeselecteerdeOpstelling = opstelling.Naam;
@@ -387,13 +413,20 @@ public partial class MainWindowViewModel : ObservableObject
     private void VoegStoelToe(Stoel model)
     {
         var musicus = model.MusicusId is { } id ? ZoekMusicus(id) : null;
-        var stoel = new StoelViewModel(model, Catalogus.Zoek(model.InstrumentId), musicus, VerwijderStoel);
+        var stoel = new StoelViewModel(model, Catalogus.Zoek(model.InstrumentId), musicus, MaakStoelLeeg, VerwijderStoel);
         stoel.PropertyChanged += OnStoelPropertyChanged;
         Stoelen.Add(stoel);
     }
 
+    private void MaakStoelLeeg(StoelViewModel stoel)
+    {
+        Onthoud($"stoel leegmaken ({stoel.Musicus?.Naam})");
+        stoel.Musicus = null;
+    }
+
     private void VerwijderStoel(StoelViewModel stoel)
     {
+        Onthoud("stoel verwijderen");
         stoel.PropertyChanged -= OnStoelPropertyChanged;
         Stoelen.Remove(stoel);
         WerkPlaatsingBij();
@@ -437,6 +470,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void VerwijderMusicus(MusicusViewModel musicus)
     {
+        Onthoud($"{musicus.Naam} verwijderen");
         foreach (var stoel in Stoelen.Where(s => s.Musicus == musicus))
         {
             stoel.Musicus = null;
@@ -452,6 +486,77 @@ public partial class MainWindowViewModel : ObservableObject
             WerkPlaatsingBij();
         }
     }
+
+    // --- Ongedaan maken -----------------------------------------------------
+
+    /// <summary>
+    /// Bewaart de huidige stand vlak vóór een actie, zodat "Ongedaan maken" ernaar terug kan.
+    /// Alleen de laatste <see cref="MaxOngedaan"/> acties worden onthouden.
+    /// </summary>
+    private void Onthoud(string actie) => Onthoud(actie, Momentopname());
+
+    private void Onthoud(string actie, Opstelling stand)
+    {
+        _geschiedenis.AddLast((actie, stand));
+        if (_geschiedenis.Count > MaxOngedaan)
+        {
+            _geschiedenis.RemoveFirst();
+        }
+        GeschiedenisGewijzigd();
+    }
+
+    /// <summary>
+    /// Een stoel is met de muis versleept. Het plan staat al op de nieuwe plek, dus de
+    /// bewaarde stand krijgt de oude plek van de stoel.
+    /// </summary>
+    public void StoelVerplaatst(StoelViewModel stoel, double vanX, double vanY)
+    {
+        var stand = Momentopname();
+        var model = stand.Stoelen.First(s => s.Id == stoel.Id);
+        (model.X, model.Y) = (vanX, vanY);
+        Onthoud("stoel verplaatsen", stand);
+    }
+
+    public bool KanOngedaanMaken => _geschiedenis.Count > 0;
+
+    public string OngedaanMakenTip => _geschiedenis.Last is { } laatste
+        ? $"Maak ongedaan: {laatste.Value.Actie} (Ctrl+Z)"
+        : "Er is niets om ongedaan te maken";
+
+    [RelayCommand(CanExecute = nameof(KanOngedaanMaken))]
+    private void OngedaanMaken()
+    {
+        if (_geschiedenis.Last is not { } laatste)
+        {
+            return;
+        }
+
+        _geschiedenis.RemoveLast();
+        var (actie, stand) = laatste.Value;
+        Musici.Clear();
+        foreach (var musicus in stand.Musici)
+        {
+            VoegMusicusToe(musicus);
+        }
+        ZetStoelen(stand.Stoelen);
+        OpstellingNaam = stand.Naam;
+        GeschiedenisGewijzigd();
+        StatusMessage = $"Ongedaan gemaakt: {actie}.";
+    }
+
+    private void GeschiedenisGewijzigd()
+    {
+        OngedaanMakenCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(OngedaanMakenTip));
+    }
+
+    /// <summary>Een losse kopie van wat er nu op het scherm staat (inclusief de naam, niet ingekort).</summary>
+    private Opstelling Momentopname() => new()
+    {
+        Naam = OpstellingNaam,
+        Musici = Musici.Select(m => new Musicus { Id = m.Id, Naam = m.Model.Naam, InstrumentId = m.Model.InstrumentId }).ToList(),
+        Stoelen = Stoelen.Select(s => s.NaarModel()).ToList(),
+    };
 
     private void WerkPlaatsingBij()
     {

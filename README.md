@@ -29,6 +29,11 @@ stoel slepen en de opstelling opslaan per concert.
   stoelen die samen een rij vormen (een boog rond de dirigent, of een rechte rij) komen
   op één lijn met gelijke afstanden; de buitenste stoelen en de volgorde blijven gelijk.
   Losse stoelen blijven staan, tenzij ze over een andere stoel heen liggen.
+- **↶ Ongedaan maken** (of Ctrl+Z) draait de laatste actie terug, tot maximaal 10 acties
+  terug: musici of stoelen toevoegen en verwijderen, iemand plaatsen, een stoel leegmaken
+  of verslepen, een standaardopstelling, en een opstelling openen of importeren.
+  **Automatisch indelen** en **Stoelen uitlijnen** tellen elk als één actie. De tooltip
+  van de knop laat zien wat er ongedaan gemaakt wordt.
 - Opstellingen worden op naam opgeslagen, bijvoorbeeld "Najaarsconcert 2026". Eigen
   instrumenten die in een opstelling gebruikt worden, worden erin meegeslagen, zodat
   de opstelling ook op een andere computer te openen is.

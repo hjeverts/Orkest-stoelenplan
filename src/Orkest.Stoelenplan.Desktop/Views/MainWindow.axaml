@@ -6,6 +6,10 @@
         Title="Orkest stoelenplan"
         Width="1400" Height="850" MinWidth="900" MinHeight="600">
 
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding OngedaanMakenCommand}" />
+    </Window.KeyBindings>
+
     <Window.Styles>
         <Style Selector="Border.musicus.geplaatst">
             <Setter Property="Opacity" Value="0.45" />
@@ -38,6 +42,9 @@
                 <ComboBox ItemsSource="{Binding OrkestTypes}" SelectedItem="{Binding GekozenOrkestType}"
                           Width="170" ToolTip.Tip="Soort orkest voor de standaardopstelling" />
                 <Button Content="Standaardopstelling" Command="{Binding StandaardopstellingCommand}" Margin="6,0,20,0" />
+
+                <Button Content="↶ Ongedaan maken" Command="{Binding OngedaanMakenCommand}" Margin="0,0,20,0"
+                        ToolTip.Tip="{Binding OngedaanMakenTip}" ToolTip.ShowOnDisabled="True" />
 
                 <Button Content="Automatisch indelen" Command="{Binding AutomatischIndelenCommand}" Margin="0,0,6,0" />
                 <Button Content="Stoelen uitlijnen" Command="{Binding StoelenUitlijnenCommand}" Margin="0,0,6,0"

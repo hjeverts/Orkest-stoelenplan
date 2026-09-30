@@ -10,9 +10,11 @@ public partial class StoelViewModel : ObservableObject
 {
     public const double Diameter = 60;
 
+    private readonly Action<StoelViewModel> _leegmaken;
     private readonly Action<StoelViewModel> _verwijder;
 
-    public StoelViewModel(Stoel model, Instrument instrument, MusicusViewModel? musicus, Action<StoelViewModel> verwijder)
+    public StoelViewModel(Stoel model, Instrument instrument, MusicusViewModel? musicus,
+        Action<StoelViewModel> leegmaken, Action<StoelViewModel> verwijder)
     {
         Id = model.Id;
         Instrument = instrument;
@@ -20,6 +22,7 @@ public partial class StoelViewModel : ObservableObject
         _x = model.X;
         _y = model.Y;
         _musicus = musicus;
+        _leegmaken = leegmaken;
         _verwijder = verwijder;
     }
 
@@ -68,7 +71,7 @@ public partial class StoelViewModel : ObservableObject
     };
 
     [RelayCommand(CanExecute = nameof(IsBezet))]
-    private void Leegmaken() => Musicus = null;
+    private void Leegmaken() => _leegmaken(this);
 
     private bool IsBezet() => Musicus is not null;
 
