@@ -74,6 +74,9 @@ de opstelling gebruikt worden, reizen mee. Bestaat er al een opstelling met deze
 dan vraagt de app of die overschreven moet worden of dat de import een nieuwe naam krijgt
 (bv. "Concert (2)").
 
+Met **PDF…** bewaar je het stoelenplan zoals het op het scherm staat als PDF (A4 liggend,
+met de naam van de opstelling als titel), om te printen of naar de musici te sturen.
+
 Onder Linux heeft het bestandsvenster `xdg-desktop-portal` (met een backend voor je
 desktop, bv. `xdg-desktop-portal-hyprland` of `-gtk`) of GTK 3 nodig.
 

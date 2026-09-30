@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Orkest.Stoelenplan.Desktop.Services;
 using Orkest.Stoelenplan.Desktop.ViewModels;
 using Orkest.Stoelenplan.Shared.Models;
 
@@ -66,6 +67,45 @@ public partial class MainWindow : Window
 
         await using var stream = await bestand.OpenWriteAsync();
         await viewModel.ExporteerAsync(stream, bestand.Name);
+    }
+
+    private static readonly FilePickerFileType PdfBestand = new("PDF-document")
+    {
+        Patterns = ["*.pdf"],
+        MimeTypes = ["application/pdf"],
+    };
+
+    private async void PdfExporteren_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not { } viewModel)
+        {
+            return;
+        }
+
+        var naam = viewModel.OpstellingNaam.Trim();
+        var bestand = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Stoelenplan als PDF bewaren",
+            SuggestedFileName = naam + ".pdf",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [PdfBestand],
+            ShowOverwritePrompt = true,
+        });
+        if (bestand is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var stream = await bestand.OpenWriteAsync();
+            await StoelenplanPdf.SchrijfAsync(stream, Podium, naam, viewModel.PlaatsingSamenvatting);
+            viewModel.StatusMessage = $"Stoelenplan opgeslagen als PDF \"{bestand.Name}\".";
+        }
+        catch (Exception ex)
+        {
+            viewModel.StatusMessage = $"PDF maken mislukt: {ex.Message}";
+        }
     }
 
     private async void Importeren_Click(object? sender, RoutedEventArgs e)
