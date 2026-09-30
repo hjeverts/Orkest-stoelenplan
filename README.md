@@ -284,6 +284,25 @@ Draai je CachyOS op ARM, gebruik dan `-r linux-arm64`.
 
 Onder **XFCE** (X11) zijn geen extra stappen nodig.
 
+### Een release maken
+
+`scripts/release.sh` bouwt voor alle platforms en publiceert een release op GitHub.
+Er is een .NET SDK 10 voor nodig, en de [GitHub CLI](https://cli.github.com/) (`gh`,
+ingelogd met `gh auth login`):
+
+```bash
+scripts/release.sh 1.2.0 notes.md   # met eigen release-tekst uit notes.md
+scripts/release.sh 1.2.0            # GitHub maakt zelf een lijst van de wijzigingen
+scripts/release.sh 1.2.0 --dry-run  # alleen bouwen en inpakken, niets publiceren
+```
+
+Het script controleert eerst of de werkmap schoon is, of je op `main` zit en of de tag
+nog niet bestaat. Daarna zet het de versie in het project (met een commit), bouwt het
+voor `win-x64`, `linux-x64`, `osx-arm64` en `osx-x64` en pakt het de bestanden in
+`publish/release/`. Windows en Linux worden losse bestanden, macOS een `.tar.gz`, zodat het
+bestand uitvoerbaar blijft. Na je bevestiging (of meteen met `-y`) pusht het `main` en
+maakt het de release `v<versie>` aan, met de bestanden erbij.
+
 ## Met de API
 
 Start de API (luistert standaard op `http://localhost:5731`, instelbaar via `Urls` in
